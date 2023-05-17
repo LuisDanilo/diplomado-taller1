@@ -1,0 +1,55 @@
+version: '3'
+
+services:
+
+  db2:
+    container_name: db2
+    image: mongo
+    ports:
+     - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=usr2
+      - MONGO_INITDB_ROOT_PASSWORD=573d87e87e0d5200
+      - MONGO_INITDB_DATABASE=demo
+    volumes:
+      - ./db2/mongodata:/data/db
+      - ./db2/data.js:/docker-entrypoint-initdb.d/data.js
+
+
+  db1:
+    container_name: db1
+    image: postgres:latest
+    environment:
+      - POSTGRES_PASSWORD=8c7a2b1bb12f96b1
+      - POSTGRES_USER=usr1
+      - POSTGRES_DB=demo
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db1/pgdata:/var/lib/postgresql/data
+      - ./db1/data.sql:/docker-entrypoint-initdb.d/data.sql
+
+  api:
+    image: node:latest
+    container_name: express
+    depends_on:
+      - db1
+      - db2
+    working_dir: /api
+    volumes:
+      - ./api:/api
+    ports:
+      - "3000:3000"
+    command: ["yarn", "dev"]
+
+  app:
+    image: node:latest
+    container_name: app
+    depends_on:
+      - api
+    working_dir: /app
+    volumes:
+      - ./app:/app
+    ports:
+      - "80:4173"
+    command: ["yarn", "preview", "--host"]
