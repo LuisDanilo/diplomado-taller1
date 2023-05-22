@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import './App.css'
 import { Box, IconButton, Toolbar, Typography, AppBar, Stack, useMediaQuery, useTheme } from '@mui/material'
 import { AboutModal } from './components/AboutModal'
@@ -9,12 +9,11 @@ import { Register } from './components/Register'
 import { Summary } from './components/Summary'
 
 
-
 function App() {
-  console.log("Render App")
   const [open, setOpen] = useState<boolean>(false)
   const [openModal, setOpenModal] = useState<boolean>(false)
   const [menu, setMenu] = useState<Menu>(Menu.REGISTER)
+  const [summary, setSummary] = useState({ products: 0, prices: 0})
 
   const theme = useTheme()
 
@@ -34,6 +33,14 @@ function App() {
     setOpenModal(false)
   }, [])
 
+  const handleRegister = useCallback((data: any) => {
+    setSummary(c => ({ products: c.products + data.products, prices: c.prices + data.prices }))
+  }, [])
+
+  useEffect(() => {
+    fetch('http://localhost:3000/summary').then(res => res.json()).then(data => setSummary(data))
+  }, [])
+
   if (useMediaQuery(theme.breakpoints.down('lg'))) {
     return <h1>Not supported, please visit in desktop</h1>
   }
@@ -51,10 +58,10 @@ function App() {
       </Toolbar>
     </AppBar>
     { open && <MenuNavigation onClose={handleDrawerClose} onChange={handleMenuChange} />}
-    <Stack direction={'row'}>
-      { menu === Menu.PRODUCTS && <Products/>}
-      { menu === Menu.REGISTER && <Register/>}
-      <Summary/>
+    <Stack direction={'row'} position={'relative'}>
+      { menu === Menu.PRODUCTS && <Products onRegister={handleRegister}/>}
+      { menu === Menu.REGISTER && <Register onRegister={handleRegister}/>}
+      <Summary summary={summary}/>
     </Stack>
   </Box>
 }

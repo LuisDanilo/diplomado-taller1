@@ -51,5 +51,7 @@ services:
     volumes:
       - ./app:/app
     ports:
-      - "80:4173"
-    command: ["yarn", "preview", "--host"]
+      # - "80:4173"
+      - "80:5173"
+    # command: ["yarn", "preview", "--host"]
+    command: ["yarn", "dev", "--host"]

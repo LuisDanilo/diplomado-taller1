@@ -1,6 +1,6 @@
 import pg from 'pg'
 import mongoose from 'mongoose'
-
+import { v4 } from 'uuid'
 
 /**
  * Concret postgres client.
@@ -42,6 +42,24 @@ class PostgresClient {
             return []
         }
     }
+
+    /**
+     * Method that perform query to add product.
+     */
+    async addProduct({ name, description, price, quantity }) {
+        let client = null
+        try {
+            client = await this._pool.connect()
+            const product = await client.query(`INSERT INTO products(uuid, name, description, price, quantity) VALUES ('${v4()}', '${name}', ${description ? `'${description}'` : null}, ${price}, ${quantity});`)
+            client.release()
+            // console.log(product)
+            // return product.rows
+        } catch(e) {
+            console.log(e)
+            client && client.release()
+            // return []
+        }
+    }
 }
 
 /**
@@ -51,7 +69,7 @@ class PostgresClient {
  */
 class MongoClient {
     static mongoClientInstance = null
-    _productModel = mongoose.model('Product', new mongoose.Schema({ name: String }))
+    _productModel = mongoose.model('Product', new mongoose.Schema({ uuid: String, name: String, description: String, price: Number, quantity: Number }))
 
     constructor() {
         if (MongoClient.mongoClientInstance) {
@@ -59,28 +77,38 @@ class MongoClient {
         }
         // Singleton is approached by assigning "this" to static property.
         MongoClient.mongoClientInstance = this
-        // const db = mongoose.connection
-        // db.on('open', () => {
-        //     console.log("Connected to mongo!!!!")
-        // })
+        mongoose.connect(`mongodb://db2:27017/demo`, { 
+            useNewUrlParser: true,
+            authSource: 'admin',
+            user: 'usr2',
+            pass: '573d87e87e0d5200'
+        }).then(() => console.log('Connected'))
     }
 
     async getProducts() {
-        console.log('Getting products from mongo DB')
         try {
-            await mongoose.connect(`mongodb://db2:27017/demo`, { 
-                useNewUrlParser: true,
-                authSource: 'admin',
-                user: 'usr2',
-                pass: '573d87e87e0d5200'
-            })
             const docs = await this._productModel.find()
-            await mongoose.connection.close()
+            // await mongoose.connection.close()
             return docs
         } catch(e) {
-            console.log("Catch error")
+            console.log("Catch error on getProducts")
             console.log(e)
             return []
+        }
+    }
+
+    /**
+     * Method that perform query to add product.
+     */
+    async addProduct({ name, description, price, quantity }) {
+        try {
+            const docs = await new this._productModel({ uuid: v4(), name, description, price, quantity }).save()
+            // await mongoose.connection.close()
+            // return docs
+        } catch(e) {
+            console.log("Catch error on addProduct")
+            console.log(e)
+            // return []
         }
     }
 }
